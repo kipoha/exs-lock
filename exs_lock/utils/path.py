@@ -6,7 +6,7 @@ from gi.repository import GLib  # type: ignore
 
 
 is_sphinx_build: bool = "sphinx" in sys.modules
-config_dir_name: str = "exs-lock"
+config_dir_name: str = "exs-shell"
 project_dir_name: str = "exs_lock"
 
 

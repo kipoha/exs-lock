@@ -1,42 +1,101 @@
-# import json
-#
-# from ignis.utils import exec_sh, get_monitor, get_n_monitors, get_monitors
-#
-# from exs_shell import register
-# from exs_shell.interfaces.types import AnyDict
-#
-# BASE_WIDTH = 1920
-# BASE_HEIGHT = 1080
-#
-#
-# def get_monitor_size(monitor_num: int) -> tuple[float, float]:
-#     monitor = get_monitor(monitor_num)
-#     geometry = monitor.get_geometry()  # type: ignore
-#     width, height = geometry.width, geometry.height
-#     return width, height
-#
-#
-# def get_monitor_scale(monitor_id: int) -> float:
-#     w, h = get_monitor_size(monitor_id)
-#
-#     return min(w / BASE_WIDTH, h / BASE_HEIGHT)
-#
-#
-# def get_active_monitor() -> int:
-#     monitors = get_monitors()
-#     data: AnyDict = json.loads(exec_sh("niri msg --json focused-output").stdout)
-#     model = data["model"]
-#     monitor_id = 0
-#     for i, monitor in enumerate(monitors):
-#         if str(monitor.get_model()) == str(model):
-#             monitor_id = i
-#             break
-#     return monitor_id
-#
-#
-# def init_windows(cls: type) -> None:
-#     for i in range(get_n_monitors()):
-#         class_name = f"{cls.__name__}{i}"
-#         _c = type(class_name, (cls,), {})
-#         register.window(_c)
-#         _c(i)
+from gi.repository import Gdk, Gio  # type: ignore
+
+
+class DisplayNotFoundError(Exception):
+    """
+    Raised when the display is not found (e.g., a Wayland compositor is not running).
+    """
+
+    def __init__(self, *args: object) -> None:
+        super().__init__(
+            "Display not found! Ensure you are running a Wayland compositor", *args
+        )
+
+
+class MonitorNotFoundError(Exception):
+    """
+    Raised when a monitor with the given ID is not found.
+
+    Args:
+        monitor_id: The ID of the monitor.
+    """
+
+    def __init__(self, monitor_id: int, *args: object) -> None:
+        self._monitor_id = monitor_id
+        super().__init__(f"No such monitor with id: {monitor_id}", *args)
+
+    @property
+    def monitor_id(self) -> int:
+        """
+        The ID of the monitor.
+        """
+        return self._monitor_id
+
+
+def get_gdk_display() -> Gdk.Display:
+    """
+    Get the default :class:`Gdk.Display` or raise :class:`DisplayNotFoundError` if it's ``None``.
+
+    Returns:
+        The default :class:`Gdk.Display`.
+
+    Raises:
+        DisplayNotFoundError: If :func:`Gdk.Display.get_default` returned ``None``.
+    """
+    return Gdk.Display.get_default()
+
+
+def get_monitor(monitor_id: int) -> "Gdk.Monitor | None":
+    """
+    Get the ``Gdk.Monitor`` by its ID.
+
+    Args:
+        monitor_id: The ID of the monitor.
+
+    Returns:
+        The monitor with the given ID, or ``None`` if no such monitor exists.
+    """
+    return get_gdk_display().get_monitor(monitor_id)
+
+
+def get_n_monitors() -> int:
+    """
+    Get the number of monitors.
+
+    Returns:
+        The number of monitors.
+    """
+    return get_gdk_display().get_n_monitors()
+
+
+def get_monitors() -> Gio.ListModel:
+    """
+    Get a list model of :class:`Gdk.Monitor`.
+
+    Returns:
+    A list model of :class:`Gdk.Monitor`.
+    """
+    monitors = [get_monitor(n) for n in range(get_n_monitors())]
+    return monitors
+
+
+def get_monitor_size(monitor_num: int) -> tuple[float, float]:
+    monitor = get_monitor(monitor_num)
+    geometry = monitor.get_geometry()  # type: ignore
+    width, height = geometry.width, geometry.height
+    return width, height
+
+
+def get_monitor_data(monitor: int | Gdk.Monitor) -> tuple[int, int, int, int]:
+    if isinstance(monitor, int):
+        monitor = get_monitor(monitor)
+    geometry = monitor.get_geometry()  # type: ignore
+    return geometry.x, geometry.y, geometry.width, geometry.height
+
+
+def get_monitors_data() -> list[tuple[int, int, int, int]]:
+    monitors = []
+    for m in get_monitors():
+        geo = m.get_geometry()
+        monitors.append((geo.x, geo.y, geo.width, geo.height))
+    return monitors

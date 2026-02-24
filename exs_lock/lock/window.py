@@ -1,31 +1,45 @@
 import pam
 import getpass
 
-from gi.repository import GtkSessionLock, GLib  # type: ignore
+from gi.repository import GtkSessionLock, GLib, GdkPixbuf, Gtk  # type: ignore
 
 from fabric.widgets.window import Window
-from fabric.widgets.image import Image
+from fabric.widgets.overlay import Overlay
 from fabric.widgets.entry import Entry
 from fabric.widgets.box import Box
 from fabric import Application
 
 
 class LockScreen(Window):
-    def __init__(self, lock: GtkSessionLock.Lock, app: Application):
+    def __init__(
+        self,
+        lock: GtkSessionLock.Lock,
+        app: Application,
+        img_bytes: bytes,
+    ):
         self.lock = lock
         self.app = app
+        loader = GdkPixbuf.PixbufLoader.new_with_type("png")
+        loader.write(img_bytes)
+        loader.close()
+        pixbuf = loader.get_pixbuf()
+        image_widget = Gtk.Image.new_from_pixbuf(pixbuf)
+        overlay = Overlay(
+            image_widget,
+            [
+                Entry(
+                    password=True,
+                    on_activate=self.on_activate,
+                ),
+            ],
+        )
         super().__init__(
             visible=False,
             anchor="top right",
             all_visible=False,
             child=Box(
                 v_expand=False,
-                children=[
-                    Entry(
-                        password=True,
-                        on_activate=self.on_activate,
-                    ),
-                ],
+                children=[overlay],
             ),
         )
 
