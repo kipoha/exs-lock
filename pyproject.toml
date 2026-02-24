@@ -1,0 +1,20 @@
+[project]
+name = "exs-lock-dev"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+    "fabric @ git+https://github.com/Fabric-Development/fabric.git",
+    "pam>=0.2.0",
+    "six>=1.17.0",
+]
+authors = [
+{ name = "kipoha", email = "kipoha.core@gmail.com" },
+]
+
+[tool.uv.sources]
+fabric = { git = "https://github.com/Fabric-Development/fabric.git" }
+
+[project.scripts]
+exs-lock = "exs_lock:main"
