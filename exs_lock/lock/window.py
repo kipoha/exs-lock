@@ -1,13 +1,28 @@
 import pam
 import getpass
 
-from gi.repository import GtkSessionLock, GLib, GdkPixbuf, Gtk  # type: ignore
+from typing import Any
 
+from datetime import datetime
+
+from gi.repository import GtkSessionLock, GLib, GdkPixbuf  # type: ignore
+
+from fabric import Application
+from fabric.core.fabricator import Fabricator
 from fabric.widgets.window import Window
+from fabric.widgets.image import Image
 from fabric.widgets.overlay import Overlay
 from fabric.widgets.entry import Entry
 from fabric.widgets.box import Box
-from fabric import Application
+from fabric.widgets.revealer import Revealer
+from fabric.widgets.shapes import Corner, CornerOrientation
+
+from exs_lock.utils.img import blur_png_bytes
+from exs_lock.utils.config import get_config
+
+
+time_format = "%H:%M:%S"
+date_format = "%Y-%m-%d"
 
 
 class LockScreen(Window):
@@ -19,33 +34,145 @@ class LockScreen(Window):
     ):
         self.lock = lock
         self.app = app
+        config = get_config()
+        blurred = blur_png_bytes(img_bytes, 10)
         loader = GdkPixbuf.PixbufLoader.new_with_type("png")
         loader.write(img_bytes)
         loader.close()
         pixbuf = loader.get_pixbuf()
-        image_widget = Gtk.Image.new_from_pixbuf(pixbuf)
-        overlay = Overlay(
-            image_widget,
-            [
-                Entry(
-                    password=True,
-                    on_activate=self.on_activate,
+        blurred_loader = GdkPixbuf.PixbufLoader.new_with_type("png")
+        blurred_loader.write(blurred)
+        blurred_loader.close()
+        blurred_pixbuf = blurred_loader.get_pixbuf()
+        root_bg = Image(
+            pixbuf=pixbuf,
+            name="lockscreen-root-bg",
+        )
+        bg = Image(
+            pixbuf=blurred_pixbuf,
+            name="lockscreen-blurred-bg",
+        )
+        entry_position = {
+            "top": "start",
+            "center": "center",
+            "bottom": "end",
+        }
+        self.entry = Entry(
+            name="lockscreen-entry",
+            placeholder="Password",
+            password=not config.entry_visibility,
+            on_activate=self.on_activate,
+        )
+        self.entry.connect("changed", self.on_change)
+        self.box = Box(
+            v_expand=True,
+            h_expand=True,
+            h_align="center",
+            v_align="center",
+            children=[self.entry],
+            name="lockscreen-entry-box-inner",
+            style_classes=config.entry_position,
+        )
+        if config.entry_position == "top":
+            entry_childs = [
+                Corner(
+                    CornerOrientation.TOP_RIGHT,
+                    style_classes="corner",
+                    size=[50, 45],
+                    v_align="start",
                 ),
-            ],
+                self.box,
+                Corner(
+                    CornerOrientation.TOP_LEFT,
+                    style_classes="corner",
+                    size=[50, 45],
+                    v_align="start",
+                ),
+            ]
+        elif config.entry_position == "center":
+            entry_childs = [self.box]
+        else:  # bottom
+            entry_childs = [
+                Corner(
+                    CornerOrientation.BOTTOM_RIGHT,
+                    style_classes="corner",
+                    size=[50, 45],
+                    v_align="end",
+                ),
+                self.box,
+                Corner(
+                    CornerOrientation.BOTTOM_LEFT,
+                    style_classes="corner",
+                    size=[50, 45],
+                    v_align="end",
+                ),
+            ]
+        self.entry_box = Box(
+            v_expand=False,
+            h_expand=False,
+            h_align="center",
+            v_align=entry_position.get(config.entry_position, "end"),
+            children=entry_childs,
+            name="lockscreen-entry-box",
+            style_classes=config.entry_position,
+            all_visible=True,
+        )
+        overlay = Overlay(
+            bg,
+            [self.entry_box],
+        )
+        self.revealer = Revealer(
+            child=overlay,
+            name="lockscreen-revealer",
+            transition_type="crossfade",
+            transition_duration=500,
+        )
+        root_overlay = Overlay(
+            root_bg,
+            [self.revealer],
         )
         super().__init__(
             visible=False,
-            anchor="top right",
+            anchor="lef top right bottom",
             all_visible=False,
             child=Box(
                 v_expand=False,
-                children=[overlay],
+                children=[root_overlay],
             ),
         )
 
-    def on_activate(self, entry: Entry, *args):
+    def show_all(self):
+        _ = super().show_all()
+        self.revealer.reveal()
+        self.entry.grab_focus()
+        return _
+
+    def hide_and_destroy(self):
+        self.revealer.unreveal()
+        duration = getattr(self.revealer, "transition_duration", 400)
+
+        def finish():
+            self.lock.unlock_and_destroy()
+            super(LockScreen, self).destroy()
+            GLib.idle_add(self.app.quit)
+            return False
+
+        GLib.timeout_add(duration, finish)
+
+    def on_change(self, entry: Entry, *_: Any):
+        text = str(entry.get_text())
+        if text:
+            if "active" not in self.entry_box.style_classes:
+                self.entry_box.add_style_class("active")
+        else:
+            if "active" in self.entry_box.style_classes:
+                self.entry_box.remove_style_class("active")
+
+    def on_activate(self, entry: Entry, *_: Any):
         if not pam.authenticate(getpass.getuser(), (entry.get_text() or "").strip()):
             return
-        self.lock.unlock_and_destroy()
-        self.destroy()
-        GLib.idle_add(self.app.quit)
+        self.hide_and_destroy()
+
+    def get_dt(self) -> tuple[str, str]:
+        now = datetime.now()
+        return now.strftime(time_format), now.strftime(date_format)

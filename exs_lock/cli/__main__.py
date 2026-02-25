@@ -1,4 +1,4 @@
-from exs_lock import main
+from exs_lock.cli import main
 
 
 if __name__ == "__main__":
