@@ -21,16 +21,16 @@ def get_config() -> Config:
     data: AnyDict = json.loads(file.read_text())
 
     config: AnyDict = data.get("_lock", initial_config["_lock"])
-    if not isinstance(config["entry_position"], str) or config[
+    if not isinstance(config.get("entry_position"), str) or config[
         "entry_position"
     ] not in ["top", "center", "bottom"]:
         config["entry_position"] = "bottom"
     if (
-        not isinstance(config["blur_radius"], int)
+        not isinstance(config.get("blur_radius"), int)
         or config["blur_radius"] < 0
         or config["blur_radius"] > 100
     ):
         config["blur_radius"] = 10
-    if not isinstance(config["entry_visibility"], bool):
+    if not isinstance(config.get("entry_visibility"), bool):
         config["entry_visibility"] = False
     return Config(**config)

@@ -6,9 +6,13 @@ from exs_lock.utils.path import Dirs, Paths
 def load() -> str:
     is_dev = "--dev" in sys.argv
 
-    user_css = Dirs.CONFIG_DIR / "lock.css"
-    user_colors = Dirs.CONFIG_DIR / "lock_colors.css"
-    user_imports = Dirs.CONFIG_DIR / "lock_imports.css"
+    config_dir = Dirs.CONFIG_DIR / "lock"
+
+    config_dir.mkdir(exist_ok=True)
+
+    user_css = config_dir / "lock.css"
+    user_colors = Dirs.CONFIG_DIR / "colors.css"
+    user_imports = config_dir / "lock_imports.css"
 
     base_css = Paths.path / "styles/lock_base.css"
     base_colors = Paths.path / "styles/lock_colors.css"

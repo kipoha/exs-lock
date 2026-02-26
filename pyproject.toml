@@ -1,3 +1,11 @@
+[build-system]
+requires = ["setuptools>=65.0", "wheel", "setuptools_scm"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools_scm]
+version_scheme = "post-release"
+local_scheme = "node-and-date"
+
 [project]
 name = "exs-lock-dev"
 version = "0.1.0"
@@ -11,7 +19,7 @@ dependencies = [
     "six>=1.17.0",
 ]
 authors = [
-{ name = "kipoha", email = "kipoha.core@gmail.com" },
+    { name = "kipoha", email = "kipoha.core@gmail.com" },
 ]
 
 [tool.uv.sources]
@@ -19,3 +27,9 @@ fabric = { git = "https://github.com/Fabric-Development/fabric.git" }
 
 [project.scripts]
 exs-lock = "exs_lock.cli:main"
+
+[tool.setuptools]
+include-package-data = true
+
+[tool.setuptools.packages.find]
+include = ["exs_lock"]
