@@ -23,16 +23,17 @@ def load() -> str:
         return str(dev_css)
 
     user_imports.touch()
+    if not user_colors.exists():
+        user_colors.touch()
+        user_colors.write_text(base_colors.read_text())
+
     if not user_css.exists():
         user_css.touch()
-
-        if not user_colors.exists():
-            user_colors.touch()
-            user_colors.write_text(base_colors.read_text())
 
         css_content = config_css.read_text()
         content = f"@import url('{user_imports}');\n\n{css_content}"
         user_css.write_text(content)
+
     user_imports.write_text(
         f'@import url("{user_colors}");\n@import url("{base_css}");'
     )
