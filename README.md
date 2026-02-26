@@ -93,3 +93,7 @@ Example:
 > **Note:** When used with [Exs-Shell](https://github.com/kipoha/exs-shell.git),  
 > `exs-lock` can be configured via Exs-Shell's built-in settings.  
 > After installing `exs-lock`, restart or reload Exs-Shell to enable lock support.
+
+---
+
+[Discord](https://discord.com/invite/FbdqgpnY9P)
