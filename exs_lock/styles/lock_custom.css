@@ -1,9 +1,4 @@
-* {
-  all: unset;
-  color: @primary;
-  font-family: JetBrains Mono Nerd Font;
-  transition: all 0.2s ease;
-}
+* {}
 
 #lockscreen-entry-box.top.active {}
 
