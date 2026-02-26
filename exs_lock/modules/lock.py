@@ -3,12 +3,9 @@ import getpass
 
 from typing import Any
 
-from datetime import datetime
-
 from gi.repository import GtkSessionLock, GLib, GdkPixbuf  # type: ignore
 
 from fabric import Application
-from fabric.core.fabricator import Fabricator
 from fabric.widgets.window import Window
 from fabric.widgets.image import Image
 from fabric.widgets.overlay import Overlay
@@ -19,10 +16,8 @@ from fabric.widgets.shapes import Corner, CornerOrientation
 
 from exs_lock.utils.img import blur_png_bytes
 from exs_lock.utils.config import get_config
-
-
-time_format = "%H:%M:%S"
-date_format = "%Y-%m-%d"
+from exs_lock.modules.widgets.clock import DateTime
+from exs_lock.utils.loop import run_in_thread
 
 
 class LockScreen(Window):
@@ -35,7 +30,7 @@ class LockScreen(Window):
         self.lock = lock
         self.app = app
         config = get_config()
-        blurred = blur_png_bytes(img_bytes, 10)
+        blurred = blur_png_bytes(img_bytes, config.blur_radius)
         loader = GdkPixbuf.PixbufLoader.new_with_type("png")
         loader.write(img_bytes)
         loader.close()
@@ -117,12 +112,25 @@ class LockScreen(Window):
             style_classes=config.entry_position,
             all_visible=True,
         )
+        widgets_box = Box(
+            children=[
+                DateTime(),
+            ],
+            h_expand=True,
+            v_expand=True,
+            h_align="center",
+            v_align="center",
+        )
         overlay = Overlay(
-            bg,
+            widgets_box,
             [self.entry_box],
         )
+        bg_overlay = Overlay(
+            bg,
+            [overlay],
+        )
         self.revealer = Revealer(
-            child=overlay,
+            child=bg_overlay,
             name="lockscreen-revealer",
             transition_type="crossfade",
             transition_duration=500,
@@ -168,11 +176,10 @@ class LockScreen(Window):
             if "active" in self.entry_box.style_classes:
                 self.entry_box.remove_style_class("active")
 
+    @run_in_thread
     def on_activate(self, entry: Entry, *_: Any):
         if not pam.authenticate(getpass.getuser(), (entry.get_text() or "").strip()):
+            self.entry.add_style_class("error")
+            GLib.timeout_add(1000, self.entry.remove_style_class, "error")
             return
         self.hide_and_destroy()
-
-    def get_dt(self) -> tuple[str, str]:
-        now = datetime.now()
-        return now.strftime(time_format), now.strftime(date_format)

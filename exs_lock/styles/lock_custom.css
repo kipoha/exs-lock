@@ -1,0 +1,46 @@
+* {
+  all: unset;
+  color: @primary;
+  font-family: JetBrains Mono Nerd Font;
+  transition: all 0.2s ease;
+}
+
+#lockscreen-entry-box.top.active {}
+
+#lockscreen-entry-box.bottom.active {}
+
+#lockscreen-entry-box.center.active {}
+
+#lockscreen-entry-box.active {}
+
+#lockscreen-entry-box.bottom {}
+
+#lockscreen-entry-box.top {}
+
+#lockscreen-entry-box-inner.bottom {}
+
+#lockscreen-entry-box-inner.top {}
+
+#lockscreen-entry-box.center {}
+
+#lockscreen-entry.error {}
+
+#lockscreen-entry {}
+
+#lockscreen-entry-box-inner {}
+
+#lockscreen-entry-box {}
+
+.corner {}
+
+#lockscreen-datetime {}
+
+#lockscreen-date {}
+
+#lockscreen-seconds {}
+
+#lockscreen-minutes {}
+
+#lockscreen-hours {}
+
+#lockscreen-time {}
