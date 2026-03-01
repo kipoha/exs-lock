@@ -26,7 +26,7 @@ def get_config() -> Config:
     ] not in ["top", "center", "bottom"]:
         config["entry_position"] = "bottom"
     if (
-        not isinstance(config.get("blur_radius"), int)
+        not isinstance(config.get("blur_radius"), (int, float))
         or config["blur_radius"] < 0
         or config["blur_radius"] > 100
     ):
