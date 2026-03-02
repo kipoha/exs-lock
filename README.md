@@ -102,4 +102,4 @@ Example:
 
 ## Related Projects
 
-- [exs-lock](https://github.com/kipoha/exs-shell) – Desktop shell for Niri Wayland Compositor
+- [exs-shell](https://github.com/kipoha/exs-shell) – Desktop shell for Niri Wayland Compositor
