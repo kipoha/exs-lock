@@ -12,14 +12,19 @@ from exs_lock.utils import css, monitor, screenshot  # noqa: E402
 
 
 def initialize(app: Application):
+    lock = GtkSessionLock.prepare_lock()
+    lock.lock_lock()
+    
     img_bytes = []
     for n in monitor.get_monitors_data():
         img_bytes.append(screenshot.take(n))
+    
+    screens = []
+    
     for n, img in zip(monitor.get_monitors(), img_bytes):
-        lock = GtkSessionLock.prepare_lock()
-        lock.lock_lock()
-        lockscreen = LockScreen(lock, app, img)
+        lockscreen = LockScreen(lock, app, img, screens)
         lock.new_surface(lockscreen, n)
+        screens.append(lockscreen)
         lockscreen.show_all()
 
 

@@ -26,9 +26,11 @@ class LockScreen(Window):
         lock: GtkSessionLock.Lock,
         app: Application,
         img_bytes: bytes,
+        all_screens: list["LockScreen"],
     ):
         self.lock = lock
         self.app = app
+        self.all_screens = all_screens
         config = get_config()
         blurred = blur_png_bytes(img_bytes, config.blur_radius)
         loader = GdkPixbuf.PixbufLoader.new_with_type("png")
@@ -156,12 +158,17 @@ class LockScreen(Window):
         return _
 
     def hide_and_destroy(self):
-        self.revealer.unreveal()
-        duration = getattr(self.revealer, "transition_duration", 400)
+        for screen in self.all_screens:
+            screen.revealer.unreveal()
+        
+        duration = getattr(self.revealer, "transition_duration", 500)
 
         def finish():
             self.lock.unlock_and_destroy()
-            super(LockScreen, self).destroy()
+            
+            for screen in self.all_screens:
+                super(LockScreen, screen).destroy()
+                
             GLib.idle_add(self.app.quit)
             return False
 
